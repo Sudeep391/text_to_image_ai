@@ -1,88 +1,59 @@
 import streamlit as st
 import requests
-import os
-from dotenv import load_dotenv
 from PIL import Image
 from io import BytesIO
 
-# Load environment variables
-load_dotenv()
+# 🔑 Add your Hugging Face API Key here
+API_KEY = "YOUR_HUGGINGFACE_API_KEY"
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-HF_API_KEY = os.getenv("HF_API_KEY")
+# 🎯 Model (Stable Diffusion)
+API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
 
-# -------------------------------
-# Function: Enhance Prompt (Groq)
-# -------------------------------
-def enhance_prompt(prompt):
-    try:
-        url = "https://api.groq.com/openai/v1/chat/completions"
+headers = {
+    "Authorization": f"Bearer {API_KEY}"
+}
 
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        data = {
-            "model": "llama3-8b-8192",
-            "messages": [
-                {"role": "system", "content": "Enhance image prompts."},
-                {"role": "user", "content": prompt}
-            ]
-        }
-
-        response = requests.post(url, headers=headers, json=data)
-
-        if response.status_code != 200:
-            return f"Error: {response.text}"
-
-        result = response.json()
-
-        if "choices" in result:
-            return result["choices"][0]["message"]["content"]
-        else:
-            return f"Unexpected response: {result}"
-
-    except Exception as e:
-        return str(e)
-
-
-# -------------------------------
-# Function: Generate Image
-# -------------------------------
+# 🎨 Function to generate image
 def generate_image(prompt):
-    API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
-    
-    headers = {
-        "Authorization": f"Bearer {HF_API_KEY}"
-    }
-
     payload = {"inputs": prompt}
 
-    response = requests.post(API_URL, headers=headers, json=payload)
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload)
 
-    return Image.open(BytesIO(response.content))
+        # 🔍 Debug content type
+        content_type = response.headers.get("content-type", "")
+
+        # ✅ If image returned
+        if "image" in content_type:
+            return Image.open(BytesIO(response.content))
+
+        # ❌ If error returned (JSON / text)
+        else:
+            st.error("API Error:")
+            st.code(response.text)
+            return None
+
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+        return None
 
 
-# -------------------------------
-# Streamlit UI
-# -------------------------------
-st.title("🎨 Text to Image Generator")
-st.write("Generate images using AI + Groq-enhanced prompts")
+# 🌐 Streamlit UI
+st.set_page_config(page_title="Text to Image Generator", layout="centered")
 
-user_prompt = st.text_input("Enter your prompt:")
+st.title("🖼️ AI Text-to-Image Generator")
+st.write("Enter a prompt and generate an image using AI")
 
+# ✍️ User input
+prompt = st.text_area("Enter your prompt:", "A futuristic city with flying cars, neon lights")
+
+# 🚀 Generate button
 if st.button("Generate Image"):
-    if user_prompt:
-        with st.spinner("Enhancing prompt with Groq..."):
-            enhanced = enhance_prompt(user_prompt)
-
-        st.subheader("✨ Enhanced Prompt")
-        st.write(enhanced)
-
-        with st.spinner("Generating image..."):
-            image = generate_image(enhanced)
-
-        st.image(image, caption="Generated Image", use_column_width=True)
+    if prompt.strip() == "":
+        st.warning("Please enter a prompt")
     else:
-        st.warning("Please enter a prompt!")
+        with st.spinner("Generating image..."):
+            image = generate_image(prompt)
+
+            if image:
+                st.image(image, caption="Generated Image", use_column_width=True)
