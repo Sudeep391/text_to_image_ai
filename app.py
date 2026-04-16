@@ -33,7 +33,7 @@ def enhance_prompt(prompt):
     response = requests.post(url, headers=headers, json=data)
     result = response.json()
 
-    return result["choices"][0]["message"]["content"]
+    return result [0]["message"]["content"]
 
 
 # -------------------------------
