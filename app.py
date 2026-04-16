@@ -9,6 +9,7 @@ from io import BytesIO
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+HF_API_KEY = os.getenv("HF_API_KEY")
 
 # -------------------------------
 # Function: Enhance Prompt (Groq)
