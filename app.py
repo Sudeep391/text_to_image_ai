@@ -15,25 +15,36 @@ HF_API_KEY = os.getenv("HF_API_KEY")
 # Function: Enhance Prompt (Groq)
 # -------------------------------
 def enhance_prompt(prompt):
-    url = "https://api.groq.com/openai/v1/chat/completions"
+    try:
+        url = "https://api.groq.com/openai/v1/chat/completions"
 
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
 
-    data = {
-        "model": "llama3-8b-8192",
-        "messages": [
-            {"role": "system", "content": "Enhance image prompts for AI art generation."},
-            {"role": "user", "content": prompt}
-        ]
-    }
+        data = {
+            "model": "llama3-8b-8192",
+            "messages": [
+                {"role": "system", "content": "Enhance image prompts."},
+                {"role": "user", "content": prompt}
+            ]
+        }
 
-    response = requests.post(url, headers=headers, json=data)
-    result = response.json()
+        response = requests.post(url, headers=headers, json=data)
 
-    return result ["choices"] [0]["message"]["content"]
+        if response.status_code != 200:
+            return f"Error: {response.text}"
+
+        result = response.json()
+
+        if "choices" in result:
+            return result["choices"][0]["message"]["content"]
+        else:
+            return f"Unexpected response: {result}"
+
+    except Exception as e:
+        return str(e)
 
 
 # -------------------------------
